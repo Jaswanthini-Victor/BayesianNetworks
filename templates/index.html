@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayesian Network Trainer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar {
+            height: 100vh;
+            width: 250px;
+            position: fixed;
+            background-color: #343a40;
+            padding: 20px;
+            color: white;
+        }
+
+        .sidebar h2 {
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .sidebar a {
+            display: block;
+            color: white;
+            padding: 10px;
+            text-decoration: none;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .sidebar a:hover {
+            background-color: #495057;
+        }
+
+        .content {
+            margin-left: 270px;
+            padding: 20px;
+        }
+
+        .section {
+            margin-top: 20px;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .form-control {
+            margin-bottom: 10px;
+        }
+
+        .img-fluid {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Bayesian Network</h2>
+        <a href="#upload" onclick="showSection('upload')">Upload File</a>
+        <a href="#preprocess" onclick="showSection('preprocess')">Preprocessing</a>
+        <a href="#statistical_summary" onclick="showSection('statistical_summary')">Statistical Summary</a>
+        <a href="#visualize" onclick="showSection('visualize')">Visualization</a>
+        <a href="#train" onclick="showSection('train')">Train Model</a>
+    
+        <a href="#download_report" onclick="showSection('download_report')">Download Report</a>
+    </div>
+
+    <div class="content">
+        <!-- Upload Section -->
+        <div id="upload" class="section active">
+            <h3>Upload File</h3>
+            <form action="/upload" method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <input type="file" class="form-control" name="file" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
+            {% if data_preview %}
+            <hr>
+            <h4>Data Preview</h4>
+            <div>{{ data_preview | safe }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Preprocess Section -->
+        <div id="preprocess" class="section">
+            <h3>Data Preprocessing</h3>
+            <form action="/preprocess" method="POST">
+                <div class="mb-3">
+                    <label for="preprocess_step" class="form-label">Choose a preprocessing step:</label>
+                    <select class="form-control" id="preprocess_step" name="preprocess_step">
+                        <option value="missing_values">Handle Missing Values</option>
+                        <option value="normalization">Normalize Data</option>
+                        <option value="outliers">Remove Outliers</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Process Data</button>
+            </form>
+            {% if processed_data %}
+            <hr>
+            <h4>Processed Data Preview</h4>
+            <div>{{ data_preview | safe }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Statistical Summary Section -->
+        <div id="statistical_summary" class="section">
+            <h3>Statistical Summary</h3>
+            <form action="/generate_summary" method="POST">
+                <button type="submit" class="btn btn-primary">Generate Statistical Summary</button>
+            </form>
+            {% if statistical_summary %}
+            <hr>
+            <h4>Summary</h4>
+            <pre>{{ statistical_summary }}</pre>
+            {% endif %}
+        </div>
+
+        <!-- Visualization Section -->
+        <div id="visualize" class="section">
+            <h3>Data Visualization</h3>
+            <form action="/visualize" method="POST">
+                <div class="mb-3">
+                    <label for="chart_type" class="form-label">Chart Type:</label>
+                    <select class="form-control" id="chart_type" name="chart_type">
+                        <option value="bar">Bar Chart</option>
+                        <option value="line">Line Chart</option>
+                        <option value="scatter">Scatter Plot</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="x_axis" class="form-label">X-Axis:</label>
+                    <select class="form-control" id="x_axis" name="x_axis">
+                        {% for col in columns %}
+                            <option value="{{ col }}">{{ col }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="y_axis" class="form-label">Y-Axis:</label>
+                    <select class="form-control" id="y_axis" name="y_axis">
+                        {% for col in columns %}
+                            <option value="{{ col }}">{{ col }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Generate Visualization</button>
+            </form>
+            {% if plot_url %}
+            <hr>
+            <h4>Generated Plot</h4>
+            <img src="{{ plot_url }}" alt="Plot" class="img-fluid">
+            {% endif %}
+        </div>
+
+        <!-- Train Model Section -->
+        <div id="train" class="section">
+            <h3>Train Bayesian Network</h3>
+            <form action="/train" method="POST">
+                <div class="mb-3">
+                    <label for="optimization_method" class="form-label">Optimization Method:</label>
+                    <select class="form-control" id="optimization_method" name="optimization_method">
+                        <option value="hill_climb">Hill Climbing</option>
+                        <option value="k2">K2 Score</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <input type="checkbox" id="no_optimization" name="no_optimization" value="true">
+                    <label for="no_optimization">Train without optimization</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Train Model</button>
+            </form>
+            {% if metrics %}
+            <hr>
+            <h4>Model Metrics</h4>
+            <ul>
+                <li>BIC Score: {{ metrics['BIC Score'] }}</li>
+                <li>K2 Score: {{ metrics['K2 Score'] }}</li>
+                <li>Number of Edges: {{ metrics['Edges'] }}</li>
+            </ul>
+            {% endif %}
+        </div>
+
+       
+
+        <!-- Download Report Section -->
+        <div id="download_report" class="section">
+            <h3>Download Report</h3>
+            <form action="/download_report" method="POST">
+                <button type="submit" class="btn btn-success">Download Report (CSV/Excel/JSON)</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => section.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+        }
+    </script>
+</body>
+</html>
